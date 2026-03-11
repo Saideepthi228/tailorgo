@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* GLOBAL THEME — SPOTIFY STYLE */
+/* GLOBAL THEME — DARK STYLE */
 body {
   background: #0b0b0b;
   color: #ffffff;
@@ -93,33 +93,33 @@ html, body, #root {
   background: #111;
 }
 
-/* CLEAN TAILOR CARD — NO CLUMSY SHAPES */
+/* ===== MODERN TAILOR CARD ===== */
+
 .tailor-card {
-  background: #151515;
-  border-radius: 16px;
+  background: #141414;
+  border-radius: 18px;
   display: flex;
-  gap: 16px;
-  padding: 16px;
+  gap: 18px;
+  padding: 18px;
   border: 1px solid #222;
-  margin-bottom: 20px;
-  transition: 0.25s ease;
+  margin-bottom: 22px;
+  transition: all 0.25s ease;
+  cursor: pointer;
 }
 
 .tailor-card:hover {
-  background: #1d1d1d;
-  transform: scale(1.02);
+  background: #1c1c1c;
+  transform: translateY(-3px);
 }
 
 /* IMAGE BOX */
 .tailor-img-box {
-  width: 96px;
-  height: 96px;
+  width: 110px;
+  height: 110px;
   background: #222;
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
 }
 
 .tailor-img {
@@ -128,15 +128,12 @@ html, body, #root {
   object-fit: cover;
 }
 
-/* If no image available */
-.img-placeholder {
-  font-size: 36px;
-  opacity: 0.5;
-}
-
 /* CONTENT BODY */
 .tailor-card-body {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .tailor-card-body h2 {
@@ -145,12 +142,13 @@ html, body, #root {
   font-weight: 700;
 }
 
-.tailor-card-body .bio {
+.tailor-card-body p {
   margin-top: 4px;
   opacity: 0.7;
   font-size: 14px;
 }
 
+/* INFO ROW */
 .tailor-info-row {
   margin-top: 10px;
   display: flex;
@@ -165,10 +163,10 @@ html, body, #root {
 }
 
 /* BUTTON */
-.order-btn {
-  margin-top: 14px;
+.btn.primary.small {
+  margin-top: 12px;
   background: #0a43d3;
-  padding: 8px 14px;
+  padding: 9px 16px;
   border-radius: 12px;
   font-weight: 600;
   border: 1px solid #0b51ff;
@@ -176,8 +174,8 @@ html, body, #root {
   transition: 0.2s;
 }
 
-.order-btn:hover {
-  background: #0c2fa3;
+.btn.primary.small:hover {
+  background: #0832a3;
 }
 
 /* BOTTOM NAV FIX */
@@ -188,7 +186,7 @@ html, body, #root {
   overflow-x: hidden !important;
 }
 
-/* CARD REUSABLE STYLE */
+/* REUSABLE CARD STYLE */
 .card {
   background: #151515;
   padding: 18px;

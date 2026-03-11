@@ -1,4 +1,4 @@
-// server.js (ESM)
+// server.js
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -9,108 +9,84 @@ import db from "./utils/db.js";
 
 dotenv.config();
 
-// ------------------------------------
-// EXPRESS + SOCKET SERVER
-// ------------------------------------
 const app = express();
 const httpServer = createServer(app);
 
-// ------------------------------------
-// SOCKET.IO SERVER SETUP
-// ------------------------------------
+/*
+SOCKET SERVER
+*/
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173", // your frontend
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"]
   }
 });
 
-io.on("connection", (socket) => {
-  console.log("🔥 User connected:", socket.id);
+app.set("io", io);
 
-  // -----------------------------
-  // JOIN CUSTOM ROOM (chat/order)
-  // -----------------------------
+/*
+SOCKET EVENTS
+*/
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
   socket.on("join_room", ({ room }) => {
     socket.join(room);
-    console.log(`📌 User joined room: ${room}`);
+    console.log("Joined room:", room);
   });
 
-  // -----------------------------
-  // CHAT MESSAGE
-  // -----------------------------
   socket.on("message", ({ room, payload }) => {
     io.to(room).emit("message", payload);
   });
 
-  // -----------------------------
-  // VOICE / VIDEO CALL REQUESTS
-  // -----------------------------
-  socket.on("call_request", ({ room, type }) => {
-    io.to(room).emit("call_request", { type });
-  });
-
-  // -----------------------------
-  // TYPING INDICATOR
-  // -----------------------------
   socket.on("typing", ({ room, user }) => {
     io.to(room).emit("typing", user);
   });
 
-  // -----------------------------
-  // LIVE ORDER STATUS UPDATE
-  // -----------------------------
-  socket.on("order_status_update", ({ orderId, status }) => {
-    console.log("📢 Status Update:", orderId, status);
-
-    // Notify customer watching this order
-    io.to(`order_${orderId}`).emit("order_status_update", {
-      orderId,
-      status
-    });
+  socket.on("call_request", ({ room, type }) => {
+    io.to(room).emit("call_request", { type });
   });
 
-  // -----------------------------
-  // DISCONNECT EVENT
-  // -----------------------------
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
+    console.log("User disconnected:", socket.id);
   });
 });
 
-// ------------------------------------
-// EXPRESS MIDDLEWARE
-// ------------------------------------
+/*
+MIDDLEWARE
+*/
 app.use(cors());
 app.use(express.json());
 
-// MAIN API ROUTES
+/*
+API ROUTES
+*/
 app.use("/api", routes);
 
-// ------------------------------------
-// TEST DATABASE CONNECTION
-// ------------------------------------
+/*
+DATABASE TEST
+*/
 (async () => {
   try {
     await db.query("SELECT 1");
-    console.log("✅ Connected to MySQL database");
+    console.log("Database connected");
   } catch (err) {
-    console.error("❌ Database connection failed:", err);
+    console.error("Database connection failed:", err);
   }
 })();
 
-// ------------------------------------
-// DEFAULT HOME ROUTE
-// ------------------------------------
+/*
+ROOT ROUTE
+*/
 app.get("/", (req, res) => {
-  res.send("TailorGo Backend is Running ✔");
+  res.send("TailorGo backend running");
 });
 
-// ------------------------------------
-// START SERVER
-// ------------------------------------
+/*
+START SERVER
+*/
 const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, () => {
-  console.log(`🚀 Backend + Socket.io running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });

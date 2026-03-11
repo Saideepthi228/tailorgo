@@ -1,84 +1,199 @@
 // src/pages/Tailors.jsx
+
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { Search, Star } from "lucide-react";
 
 export default function Tailors() {
-  const [tailors, setTailors] = useState([]);
-  const [search, setSearch] = useState("");
+
+  const [tailors,setTailors] = useState([]);
+  const [search,setSearch] = useState("");
+  const [category,setCategory] = useState("All");
+
   const navigate = useNavigate();
 
+  const sampleImages = [
+    "/images/tailor1.jpg",
+    "/images/tailor2.jpg",
+    "/images/tailor3.jpg",
+    "/images/tailor4.jpg"
+  ];
+
+
+  /*
+  LOAD TAILORS
+  */
   const loadTailors = async () => {
+
     try {
-      const res = await API.get("/tailors");
-      setTailors(res.data || []);
+
+      if (navigator.geolocation) {
+
+        navigator.geolocation.getCurrentPosition(async (pos)=>{
+
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          const res = await API.get(
+            `/tailors?lat=${lat}&lng=${lng}&service=${category}`
+          );
+
+          setTailors(res.data || []);
+
+        });
+
+      } else {
+
+        const res = await API.get(`/tailors?service=${category}`);
+        setTailors(res.data || []);
+
+      }
+
     } catch (err) {
-      console.error(err);
+
+      console.error("Error loading tailors:", err);
+
     }
+
   };
 
-  useEffect(() => {
+  useEffect(()=>{
     loadTailors();
-  }, []);
+  },[category]);
+
+
+  /*
+  SEARCH
+  */
+  const filteredTailors = tailors.filter((t)=>
+    `${t.name} ${t.bio}`
+      ?.toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
 
   return (
+
     <div className="page">
-      {/* SEARCH BOX */}
+
+      {/* SEARCH */}
+
       <div className="search-box">
-        <Search className="search-icon" size={20} />
+
+        <Search className="search-icon" size={20}/>
+
         <input
           className="search-input"
-          placeholder="Search tailors, stitching, alterations..."
+          placeholder="Search tailors..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e)=>setSearch(e.target.value)}
         />
+
       </div>
 
-      {/* FILTER TABS */}
+      <div style={{height:10}}/>
+
+
+      {/* CATEGORY FILTER */}
+
       <div className="flex gap-3 overflow-x-auto pb-2 filter-row">
-        {["All", "Blouse Stitching", "Dress Stitching", "Alterations", "Kids Wear"].map((cat) => (
-          <button key={cat} className="px-4 py-2 rounded-full bg-[#080f1a] border border-[#1f2a3d]">
+
+        {[
+          "All",
+          "Blouse Stitching",
+          "Kurta Stitching",
+          "Men Shirt Stitching",
+          "Pant Alteration"
+        ].map((cat)=>(
+          <button
+            key={cat}
+            onClick={()=>setCategory(cat)}
+            className="px-4 py-2 rounded-full bg-[#080f1a] border border-[#1f2a3d]"
+          >
             {cat}
           </button>
         ))}
+
       </div>
 
-      <div style={{ height: 16 }} />
 
-      {/* TAILOR LIST */}
-      {tailors.map((t) => (
+      {/* EMPTY */}
+
+      {filteredTailors.length === 0 && (
+
+        <div className="card">
+
+          <p className="muted">
+            No tailors found.
+          </p>
+
+        </div>
+
+      )}
+
+
+      {/* LIST */}
+
+      {filteredTailors.map((t,index)=>(
         <div
-          key={t.id}
+          key={t.id || index}
           className="tailor-card"
-          onClick={() => navigate(`/tailor/${t.id}`)}
+          onClick={()=>navigate(`/tailor/${t.id}`)}
         >
-          {/* IMAGE — ONLY SHOW IF EXISTS */}
+
           <div className="tailor-img-box">
-            {t.img_url ? (
-              <img src={t.img_url} className="tailor-img" alt="tailor" />
-            ) : (
-              <div className="img-placeholder">👕</div>
-            )}
+            <img
+              src={sampleImages[index % sampleImages.length]}
+              className="tailor-img"
+              alt="tailor"
+            />
           </div>
 
+
           <div className="tailor-card-body">
-            <h2 className="text-xl font-bold">{t.name}</h2>
-            <p className="text-sm opacity-70">{t.bio}</p>
+
+            <h2>{t.name}</h2>
+
+            <p className="bio">
+              {t.bio || "Professional stitching services"}
+            </p>
 
             <div className="tailor-info-row">
-              <Star size={16} color="#ffcc00" />
+
+              <Star size={16} color="#ffcc00"/>
+
               <span>{t.rating || "4.5"}</span>
+
               <span className="dot">•</span>
-              <span>{t.location}</span>
+
+              <span>{t.location || "Nearby"}</span>
+
             </div>
+
+            {t.service_name && (
+              <p className="muted small" style={{marginTop:4}}>
+                Service: {t.service_name}
+              </p>
+            )}
+
+            {t.distance && (
+              <p className="muted small">
+                {Number(t.distance).toFixed(2)} km away
+              </p>
+            )}
 
             <button className="btn primary small mt-2">
               View & Order
             </button>
+
           </div>
+
         </div>
       ))}
+
     </div>
+
   );
+
 }

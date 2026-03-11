@@ -1,39 +1,81 @@
 import db from "../utils/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
-
+/*
+SIGNUP
+*/
 export async function signup(req, res) {
-  const { name, email, password, phone } = req.body;
-  if (!email || !password) return res.status(400).json({ message: "Missing" });
   try {
-    const hashed = await bcrypt.hash(password, 10);
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const [result] = await db.query(
-      "INSERT INTO users (name,email,password,phone) VALUES (?,?,?,?)",
-      [name || "", email, hashed, phone || ""]
+      `INSERT INTO users (name,email,password,role)
+       VALUES (?,?,?,?)`,
+      [name, email, hashedPassword, role || "customer"]
     );
-    const id = result.insertId;
-    const token = jwt.sign({ id, email }, JWT_SECRET);
-    res.json({ token, id });
+
+    res.json({
+      success: true,
+      user_id: result.insertId
+    });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Signup error:", err);
+    res.status(500).json({ error: "Signup failed" });
   }
 }
 
+
+/*
+LOGIN
+*/
 export async function login(req, res) {
-  const { email, password } = req.body;
   try {
-    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-    if (!rows.length) return res.status(401).json({ message: "Invalid" });
+
+    const { email, password } = req.body;
+
+    const [rows] = await db.query(
+      `SELECT * FROM users WHERE email=?`,
+      [email]
+    );
+
+    if (!rows.length) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
     const user = rows[0];
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).json({ message: "Invalid" });
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET);
-    res.json({ token, id: user.id, name: user.name });
+
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res.status(400).json({ error: "Wrong password" });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      "tailorgo_secret",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role
+      }
+    });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Login failed" });
   }
 }

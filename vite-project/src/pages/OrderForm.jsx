@@ -17,6 +17,7 @@ export default function OrderForm() {
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+
   const [measurements, setMeasurements] = useState({
     neck: "",
     bust: "",
@@ -30,10 +31,7 @@ export default function OrderForm() {
     if (!tailor) {
       API.get(`/tailors/${tailorId}`)
         .then((res) => setTailor(res.data))
-        .catch((err) => {
-          console.error(err);
-          alert("Failed to load tailor");
-        })
+        .catch(() => alert("Failed to load tailor"))
         .finally(() => setLoading(false));
     }
   }, [tailor, tailorId]);
@@ -44,6 +42,7 @@ export default function OrderForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!serviceType || !address || !phone) {
       alert("Please fill service type, address and phone");
       return;
@@ -51,7 +50,6 @@ export default function OrderForm() {
 
     const payload = {
       tailor_id: Number(tailorId),
-      // Backend will store this JSON in `measurements` column
       measurements: {
         serviceType,
         description,
@@ -64,11 +62,14 @@ export default function OrderForm() {
 
     try {
       setSubmitting(true);
+
       await API.post("/orders", payload);
+
       alert("Order placed successfully!");
+
       navigate("/orders");
     } catch (err) {
-      console.error(err);
+      console.error(err.response?.data || err.message);
       alert("Failed to place order");
     } finally {
       setSubmitting(false);
@@ -77,28 +78,32 @@ export default function OrderForm() {
 
   if (loading) {
     return (
-      <div className="page dark-page">
-        <div className="container">Loading order form...</div>
+      <div className="page">
+        <div className="container">Loading...</div>
       </div>
     );
   }
 
   if (!tailor) {
     return (
-      <div className="page dark-page">
-        <div className="container">Tailor not found.</div>
+      <div className="page">
+        <div className="container">Tailor not found</div>
       </div>
     );
   }
 
   return (
-    <div className="page dark-page">
+    <div className="page">
       <div className="container">
-        <h1 className="page-title">Order with {tailor.name}</h1>
 
-        <form className="form" onSubmit={handleSubmit}>
-          <div className="section">
-            <h3>What do you want to stitch?</h3>
+        <h1 className="pageTitle">Order with {tailor.name}</h1>
+
+        <form onSubmit={handleSubmit}>
+
+          {/* SERVICE */}
+          <div className="card">
+            <h3>What do you want stitched?</h3>
+
             <select
               className="input"
               value={serviceType}
@@ -107,30 +112,29 @@ export default function OrderForm() {
               <option value="">Select service</option>
               <option value="Blouse stitching">Blouse stitching</option>
               <option value="Dress stitching">Dress stitching</option>
-              <option value="Lehenga / Ghagra">Lehenga / Ghagra</option>
-              <option value="Alteration / Repair">Alteration / Repair</option>
+              <option value="Alteration">Alteration</option>
               <option value="Kids wear">Kids wear</option>
-              <option value="Other custom work">Other custom work</option>
             </select>
 
             <textarea
               className="input"
-              placeholder="Explain design, fabric, special requests..."
+              placeholder="Describe design..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
             />
           </div>
 
-          <div className="section">
+          {/* ADDRESS */}
+          <div className="card">
             <h3>Pickup address & contact</h3>
+
             <textarea
               className="input"
-              placeholder="Full pickup address"
+              placeholder="Pickup address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              rows={2}
             />
+
             <input
               className="input"
               placeholder="Phone number"
@@ -139,60 +143,57 @@ export default function OrderForm() {
             />
           </div>
 
-          <div className="section">
+          {/* MEASUREMENTS */}
+          <div className="card">
             <h3>Basic measurements (optional)</h3>
+
             <div className="grid-2">
-              <input
-                className="input"
-                placeholder="Neck"
+              <input className="input" placeholder="Neck"
                 value={measurements.neck}
-                onChange={(e) => handleChangeMeasurement("neck", e.target.value)}
+                onChange={(e)=>handleChangeMeasurement("neck",e.target.value)}
               />
-              <input
-                className="input"
-                placeholder="Bust"
+
+              <input className="input" placeholder="Bust"
                 value={measurements.bust}
-                onChange={(e) => handleChangeMeasurement("bust", e.target.value)}
+                onChange={(e)=>handleChangeMeasurement("bust",e.target.value)}
               />
-              <input
-                className="input"
-                placeholder="Waist"
+
+              <input className="input" placeholder="Waist"
                 value={measurements.waist}
-                onChange={(e) => handleChangeMeasurement("waist", e.target.value)}
+                onChange={(e)=>handleChangeMeasurement("waist",e.target.value)}
               />
-              <input
-                className="input"
-                placeholder="Hip"
+
+              <input className="input" placeholder="Hip"
                 value={measurements.hip}
-                onChange={(e) => handleChangeMeasurement("hip", e.target.value)}
+                onChange={(e)=>handleChangeMeasurement("hip",e.target.value)}
               />
-              <input
-                className="input"
-                placeholder="Length"
+
+              <input className="input" placeholder="Length"
                 value={measurements.length}
-                onChange={(e) => handleChangeMeasurement("length", e.target.value)}
+                onChange={(e)=>handleChangeMeasurement("length",e.target.value)}
               />
-              <input
-                className="input"
-                placeholder="Sleeve"
+
+              <input className="input" placeholder="Sleeve"
                 value={measurements.sleeve}
-                onChange={(e) => handleChangeMeasurement("sleeve", e.target.value)}
+                onChange={(e)=>handleChangeMeasurement("sleeve",e.target.value)}
               />
             </div>
+
             <textarea
               className="input"
-              placeholder="Any extra notes for the tailor..."
+              placeholder="Extra notes for tailor"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 
-          <button className="btn primary full" type="submit" disabled={submitting}>
-            {submitting ? "Placing order..." : "Confirm order"}
+          <button className="btn primary full" disabled={submitting}>
+            {submitting ? "Placing order..." : "Confirm Order"}
           </button>
+
         </form>
+
       </div>
-      <div style={{ height: 80 }} />
     </div>
   );
 }

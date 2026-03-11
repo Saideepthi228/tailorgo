@@ -10,6 +10,13 @@ export default function TailorDetails() {
   const [tailor, setTailor] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const sampleImages = [
+    "/images/tailor1.jpg",
+    "/images/tailor2.jpg",
+    "/images/tailor3.jpg",
+    "/images/tailor4.jpg",
+  ];
+
   useEffect(() => {
     API.get(`/tailors/${id}`)
       .then((res) => setTailor(res.data))
@@ -22,7 +29,7 @@ export default function TailorDetails() {
 
   if (loading) {
     return (
-      <div className="page dark-page">
+      <div className="page">
         <div className="container">Loading tailor...</div>
       </div>
     );
@@ -30,7 +37,7 @@ export default function TailorDetails() {
 
   if (!tailor) {
     return (
-      <div className="page dark-page">
+      <div className="page">
         <div className="container">Tailor not found.</div>
       </div>
     );
@@ -44,90 +51,107 @@ export default function TailorDetails() {
     navigate("/chat", { state: { tailorId: tailor.id } });
   };
 
+  const image = tailor.img_url || sampleImages[tailor.id % sampleImages.length];
+
   return (
-    <div className="page dark-page">
+    <div className="page">
       <div className="container">
-        {/* Header card */}
+
+        {/* IMAGE */}
+        <div
+          style={{
+            width: "100%",
+            height: 220,
+            borderRadius: 18,
+            overflow: "hidden",
+            marginBottom: 16,
+          }}
+        >
+          <img
+            src={image}
+            alt="tailor"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </div>
+
+        {/* HEADER CARD */}
         <div className="card">
-          <div style={{ display: "flex", gap: 16 }}>
-            <div
-              style={{
-                width: 70,
-                height: 70,
-                borderRadius: 18,
-                background: "#020617",
-                border: "1px solid #1f2937",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 30,
-              }}
-            >
-              🧵
-            </div>
-            <div style={{ flex: 1 }}>
-              <h2 style={{ marginBottom: 6 }}>{tailor.name}</h2>
-              <p className="muted" style={{ marginBottom: 6 }}>
-                {tailor.bio || "Experienced tailor for all stitching needs."}
-              </p>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  fontSize: 13,
-                  color: "#a3a3a3",
-                  alignItems: "center",
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <Star size={14} color="#facc15" /> {tailor.rating || "New"}
-                </span>
-                <span>|</span>
-                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <MapPin size={14} /> {tailor.location || "Nearby"}
-                </span>
-              </div>
-            </div>
+          <h2 style={{ marginBottom: 6 }}>{tailor.name}</h2>
+
+          <p className="muted" style={{ marginBottom: 10 }}>
+            {tailor.bio || "Experienced tailor for all stitching needs."}
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 14,
+              fontSize: 14,
+              alignItems: "center",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <Star size={16} color="#facc15" />
+              {tailor.rating || "4.5"}
+            </span>
+
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <MapPin size={16} />
+              {tailor.location || "Nearby"}
+            </span>
           </div>
         </div>
 
-        {/* Actions */}
+        {/* ACTION BUTTONS */}
         <div
           style={{
             display: "flex",
             gap: 10,
-            marginTop: 10,
-            marginBottom: 14,
+            marginTop: 14,
+            marginBottom: 16,
           }}
         >
-          <button className="btn outline" style={{ flex: 1 }} onClick={handleChat}>
+          <button
+            className="btn outline"
+            style={{ flex: 1 }}
+            onClick={handleChat}
+          >
             <MessageCircle size={16} style={{ marginRight: 6 }} />
             Chat
           </button>
+
           <button className="btn outline" style={{ flex: 1 }}>
             <Phone size={16} style={{ marginRight: 6 }} />
             Call
           </button>
-          <button className="btn primary" style={{ flex: 1 }} onClick={handleBook}>
-            Book now
+
+          <button
+            className="btn primary"
+            style={{ flex: 1 }}
+            onClick={handleBook}
+          >
+            Book Now
           </button>
         </div>
 
-        {/* Info section */}
+        {/* SERVICES */}
         <div className="card">
-          <h3 style={{ marginBottom: 8 }}>What this tailor can do</h3>
-          <p className="muted" style={{ fontSize: 13, marginBottom: 10 }}>
-            Blouses, dresses, alterations, kids wear, falls & pico, embroidery etc.
-            You can specify exactly what you want in the next step.
-          </p>
-          <p className="muted" style={{ fontSize: 12 }}>
-            After booking, a TailorGo captain will pick up your cloth from home and
-            deliver back after stitching.
+          <h3 style={{ marginBottom: 8 }}>Services Offered</h3>
+
+          <p className="muted" style={{ fontSize: 14 }}>
+            Blouses, dresses, alterations, kids wear, falls & pico, embroidery,
+            custom stitching and more. You can specify your exact stitching
+            requirements in the next step.
           </p>
         </div>
-      </div>
 
-      <div style={{ height: 80 }} />
+        <div style={{ height: 80 }} />
+
+      </div>
     </div>
   );
 }

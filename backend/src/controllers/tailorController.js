@@ -1,64 +1,101 @@
+// src/controllers/tailorController.js
+
 import db from "../utils/db.js";
 
-// Haversine formula to calculate distance
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+/*
+GET ONLINE TAILORS (OPTIONAL SERVICE FILTER + DISTANCE)
+*/
+export async function getTailors(req, res) {
 
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+  try {
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // in KM
+    const { lat, lng, service } = req.query;
+
+    let params = [];
+    let serviceFilter = "";
+
+    if (service && service !== "All") {
+      serviceFilter = "AND s.name = ?";
+      params.push(service);
+    }
+
+    let distanceQuery = "";
+    if (lat && lng) {
+      distanceQuery = `
+      (6371 * ACOS(
+        COS(RADIANS(?)) *
+        COS(RADIANS(t.latitude)) *
+        COS(RADIANS(t.longitude) - RADIANS(?)) +
+        SIN(RADIANS(?)) *
+        SIN(RADIANS(t.latitude))
+      )) AS distance,`;
+      params.unshift(lat, lng, lat);
+    }
+
+    const query = `
+      SELECT DISTINCT
+        t.id,
+        t.name,
+        t.bio,
+        t.rating,
+        t.location,
+        t.img_url,
+        ${distanceQuery}
+        s.name AS service_name,
+        s.price
+      FROM tailors t
+      LEFT JOIN services s ON t.id = s.tailor_id
+      WHERE t.approved = 1
+      AND t.is_online = 1
+      ${serviceFilter}
+      ORDER BY distance ASC
+    `;
+
+    const [rows] = await db.query(query, params);
+
+    res.json(rows);
+
+  } catch (err) {
+
+    console.error("getTailors error:", err);
+
+    res.status(500).json({
+      error: "Failed to load tailors"
+    });
+
+  }
+
 }
 
-// ------------------------------
-// GET ALL TAILORS (with distance & service filter)
-// ------------------------------
-export async function getTailors(req, res) {
-  try {
-    const { q, userLat, userLng } = req.query;
 
-    // Load tailors + services
-    const [tailors] = await db.query(
-      `SELECT t.*, s.name AS service_name, s.price
-       FROM tailors t
-       LEFT JOIN services s ON s.tailor_id = t.id`
+/*
+GET SINGLE TAILOR
+*/
+export async function getTailorById(req, res) {
+
+  try {
+
+    const { id } = req.params;
+
+    const [rows] = await db.query(
+      `SELECT * FROM tailors WHERE id=?`,
+      [id]
     );
 
-    let filtered = tailors;
-
-    // Filter by service name (search)
-    if (q) {
-      filtered = filtered.filter((t) =>
-        t.service_name?.toLowerCase().includes(q.toLowerCase())
-      );
+    if (!rows.length) {
+      return res.status(404).json({ error: "Tailor not found" });
     }
 
-    // Add distance if user location is given
-    if (userLat && userLng) {
-      filtered = filtered.map((t) => {
-        const dist = calculateDistance(
-          Number(userLat),
-          Number(userLng),
-          Number(t.latitude || 0),
-          Number(t.longitude || 0)
-        );
-        return { ...t, distance: dist.toFixed(2) };
-      });
+    res.json(rows[0]);
 
-      // sort nearest first
-      filtered.sort((a, b) => a.distance - b.distance);
-    }
-
-    res.json(filtered);
   } catch (err) {
-    console.error("getTailors error:", err);
-    res.status(500).json({ error: "Failed to load tailors" });
+
+    console.error("getTailorById error:", err);
+
+    res.status(500).json({
+      error: "Failed to load tailor"
+    });
+
   }
+
 }
