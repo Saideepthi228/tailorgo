@@ -1,35 +1,35 @@
-// src/controllers/tailorController.js
-
 import db from "../utils/db.js";
 
 /*
-GET ONLINE TAILORS (OPTIONAL SERVICE FILTER + DISTANCE)
+GET ALL ONLINE TAILORS
 */
 export async function getTailors(req, res) {
-
   try {
-
     const { lat, lng, service } = req.query;
 
     let params = [];
     let serviceFilter = "";
+    let distanceQuery = "0 AS distance,";
+
+    if (lat && lng) {
+      distanceQuery = `
+      (
+        6371 * ACOS(
+          COS(RADIANS(?)) *
+          COS(RADIANS(t.latitude)) *
+          COS(RADIANS(t.longitude) - RADIANS(?)) +
+          SIN(RADIANS(?)) *
+          SIN(RADIANS(t.latitude))
+        )
+      ) AS distance,
+      `;
+
+      params.push(lat, lng, lat);
+    }
 
     if (service && service !== "All") {
       serviceFilter = "AND s.name = ?";
       params.push(service);
-    }
-
-    let distanceQuery = "";
-    if (lat && lng) {
-      distanceQuery = `
-      (6371 * ACOS(
-        COS(RADIANS(?)) *
-        COS(RADIANS(t.latitude)) *
-        COS(RADIANS(t.longitude) - RADIANS(?)) +
-        SIN(RADIANS(?)) *
-        SIN(RADIANS(t.latitude))
-      )) AS distance,`;
-      params.unshift(lat, lng, lat);
     }
 
     const query = `
@@ -44,11 +44,12 @@ export async function getTailors(req, res) {
         s.name AS service_name,
         s.price
       FROM tailors t
-      LEFT JOIN services s ON t.id = s.tailor_id
+      LEFT JOIN services s
+      ON t.id = s.tailor_id
       WHERE t.approved = 1
       AND t.is_online = 1
       ${serviceFilter}
-      ORDER BY distance ASC
+      ORDER BY distance ASC;
     `;
 
     const [rows] = await db.query(query, params);
@@ -64,9 +65,7 @@ export async function getTailors(req, res) {
     });
 
   }
-
 }
-
 
 /*
 GET SINGLE TAILOR
@@ -78,12 +77,14 @@ export async function getTailorById(req, res) {
     const { id } = req.params;
 
     const [rows] = await db.query(
-      `SELECT * FROM tailors WHERE id=?`,
+      "SELECT * FROM tailors WHERE id = ?",
       [id]
     );
 
-    if (!rows.length) {
-      return res.status(404).json({ error: "Tailor not found" });
+    if (rows.length === 0) {
+      return res.status(404).json({
+        error: "Tailor not found"
+      });
     }
 
     res.json(rows[0]);
@@ -97,5 +98,4 @@ export async function getTailorById(req, res) {
     });
 
   }
-
 }
